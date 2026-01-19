@@ -224,19 +224,69 @@ public class DoublyLinkedList<E> {
         sb.append(")");
         return sb.toString();
     }
+
+    // Exercise 1 //
+    /**
+     * Concatenates (appends) all elements of the given doubly linked list to the end of this list.
+     *
+     * This method performs a constant-time splice by reconnecting sentinel boundaries: it links this
+     * list’s last data node (the node before this trailer) to the first data node of secondlist,
+     * and links secondlist’s last data node to this list’s trailer sentinel.
+     *
+     * After concatenation, secondlist is reset to an empty list (its header points directly to
+     * its trailer, and its size becomes 0
+     *
+     * @param secondlist the list whose elements are appended to this list
+     * @throws NullPointerException if secondlist is null
+     */
+    public void concatenate(DoublyLinkedList<E> secondlist) {
+        if(secondlist == null) throw new NullPointerException("secondlist is null");
+        if (secondlist.isEmpty()) return;
+
+        // Determine boundary nodes
+        Node<E> firstNodeSecondlist = secondlist.header.getNext();
+        Node<E> lastNodeSecondlist = secondlist.trailer.getPrev();
+
+        // Splice secondlist's chain between this.trailer.prev and this.trailer
+        Node<E> lastNodeFirstlist = this.trailer.getPrev();
+
+        lastNodeFirstlist.setNext(firstNodeSecondlist);
+        firstNodeSecondlist.setPrev(lastNodeFirstlist);
+
+        lastNodeSecondlist.setNext(this.trailer);
+        this.trailer.setPrev(lastNodeSecondlist);
+
+        this.size += secondlist.size();
+
+        // Reset secondList to empty
+        secondlist.header.setNext(secondlist.trailer);
+        secondlist.trailer.setPrev(secondlist.header);
+        secondlist.size = 0;
+    }
+
     //main method
     public static void main(String[] args)
     {
-        //create and populate a doubly linked list
-        DoublyLinkedList<String> list = new DoublyLinkedList<String>();
-        list.addFirst("MSP");
-        list.addLast("ATL");
-        list.addLast("BOS");
-        //
-        list.addFirst("LAX");
+        //create and populate firstList L doubly linked list
+        DoublyLinkedList<String> L = new DoublyLinkedList<String>();
+        L.addLast("MSP");
+        L.addFirst("ATL");
+        L.addLast("LAX");
 
-        System.out.println(list);
-        System.out.println(list.first());
-        //
+        //create and populate SecondList M doubly linked list
+        DoublyLinkedList<String> M = new DoublyLinkedList<String>();
+        M.addLast("JFK");
+        M.addFirst("BOS");
+
+        // Testing before any concatenation
+        System.out.println("firstList L = " + L + " and its size is " + "[" + L.size() + "]");
+        System.out.println("secondList M = " + M + " and its size is " + "[" + M.size() + "]");
+
+        System.out.println();
+        //Let us concatenate now the seconfList to the firstList
+        L.concatenate(M);
+
+        System.out.println("firstList L becomes " + L + " and its size becomes " + "[" + L.size() + "]");
+        System.out.println("secondList M becomes " + M + " and its size becomes " + "[" + M.size() + "]");
     }
 } //----------- end of DoublyLinkedList class -----------
