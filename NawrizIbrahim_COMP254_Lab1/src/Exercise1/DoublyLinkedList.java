@@ -1,3 +1,16 @@
+/*
+
+ ** File:            DoublyLinkedList.java
+ ** Student:         Nawriz Ibrahim
+ ** Student number:  301161181
+ ** Assignment:      Lab Assignment #1 – Exercise 1 – Using Fundamental Data Structures
+ ** Date:            January 19, 2026
+ ** Description:     This program extends the textbook DoublyLinkedList implementation by adding a
+ **                  concatenate() method that appends a second doubly linked list (with header and
+ **                  trailer sentinels) to the end of the current list by reconnecting boundary links.
+ **                  A main method is included to test concatenation and verify list integrity.
+ */
+
 package Exercise1;
 
 /*
