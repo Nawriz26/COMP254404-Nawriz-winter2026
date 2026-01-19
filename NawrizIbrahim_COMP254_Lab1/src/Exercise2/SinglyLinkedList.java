@@ -1,3 +1,17 @@
+/*
+
+ ** File:            SinglyLinkedList.java
+ ** Student:         Nawriz Ibrahim
+ ** Student number:  301161181
+ ** Assignment:      Lab Assignment #1 – Exercise 2 – Using Fundamental Data Structures
+ ** Date:            January 19, 2026
+ ** Description:     This program uses the textbook SinglyLinkedList implementation and adds a
+ **                  swapNodes() method that swaps two nodes by relinking pointers (not by swapping
+ **                  element contents). It supports swapping adjacent and non-adjacent nodes, updates
+ **                  head/tail references when necessary, and includes a main method for testing.
+ */
+
+
 package Exercise2;
 
 /*
@@ -220,7 +234,7 @@ public class SinglyLinkedList<E> implements Cloneable {
         if (first == null || second == null) return;
         if (head == null) return;
 
-        // Now we should find predecessors of first & second node which is required for relinking in a singly LL
+        // Now we should find predecessors of first & second nodes which is required for relinking in a singly LL
         Node<E> prevFirst = findPredecessor(first);
         Node<E> prevSecond = findPredecessor(second);
 
