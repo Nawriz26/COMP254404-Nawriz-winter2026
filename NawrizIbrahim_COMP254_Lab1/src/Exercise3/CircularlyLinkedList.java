@@ -30,7 +30,7 @@ package Exercise3;
  * @author Roberto Tamassia
  * @author Michael H. Goldwasser
  */
-public class CircularlyLinkedList<E> {
+public class CircularlyLinkedList<E> implements Cloneable {
     //---------------- nested Node class ----------------
     /**
      * Singly linked node, which stores a reference to its element and
@@ -164,6 +164,43 @@ public class CircularlyLinkedList<E> {
     }
 
     /**
+     * Exercise 3 requirement:
+     * Return a deep copy (independent chain of nodes) of this circularly linked list.
+     */
+    @SuppressWarnings({"unchecked"})
+    public CircularlyLinkedList<E> clone() throws CloneNotSupportedException {
+        CircularlyLinkedList<E> other = (CircularlyLinkedList<E>) super.clone();
+
+        if (size == 0) {
+            //nothing to deep-copy
+            other.tail = null;
+            return other;
+        }
+
+        // Original head is after tail
+        Node<E> originalHead = tail.getNext();
+
+        // Create first node in the new chain
+        Node<E> newHead = new Node<>(originalHead.getElement(), null);
+        Node<E> newPrev = newHead;
+
+        // Walk the original list for the remaining (size-1) nodes
+        Node<E> walk = originalHead.getNext();
+        for (int i =1; i < size; i++) {
+            Node<E> newest = new Node<>(walk.getElement(), null);
+            newPrev.setNext(newest);
+            newPrev = newest;
+            walk = walk.getNext();
+        }
+
+        // Close the circle
+        newPrev.setNext(newHead);
+        other.tail = newPrev;
+
+        return other;
+    }
+
+    /**
      * Produces a string representation of the contents of the list.
      * This exists for debugging purposes only.
      */
@@ -182,22 +219,34 @@ public class CircularlyLinkedList<E> {
     }
 
     //main method
-    public static void main(String[] args)
+    public static void main(String[] args) throws CloneNotSupportedException
     {
+        CircularlyLinkedList<String> original = new CircularlyLinkedList<>();
 
-        //(LAX, MSP, ATL, BOS)
-        CircularlyLinkedList<String> circularList = new CircularlyLinkedList<String>();
-        circularList.addFirst("LAX");
-        circularList.addLast("MSP");
-        circularList.addLast("ATL");
-        circularList.addLast("BOS");
-        //
-        System.out.println(circularList);
-        circularList.removeFirst();
-        System.out.println(circularList);
-        circularList.rotate();
-        System.out.println(circularList);
+        original.addLast("Player 1");
+        original.addLast("Player 2");
+        original.addLast("Player 3");
+        original.addLast("Player 4");
+        original.addLast("Player 5");
+        original.addLast("Player 6");
 
-        //
+        System.out.println("Original List of Players: "+ original);
+
+        System.out.println();
+
+        CircularlyLinkedList<String> copy = original.clone();
+        System.out.println("Cloned List of Players: " + copy);
+
+        System.out.println();
+
+        // Mutate original; clone should remain unchanged
+        original.rotate();
+        original.removeFirst();
+        original.addLast("Player 7");
+
+        System.out.println();
+
+        System.out.println("Original List of Players after mutating: "+ original);
+        System.out.println("Cloned List of Players after mutating: " + copy);
     }
 }
