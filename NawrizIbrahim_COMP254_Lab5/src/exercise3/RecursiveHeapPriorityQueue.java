@@ -11,8 +11,11 @@ package exercise3;
 
 import java.util.Comparator;
 
+import java.util.Comparator;
+
 public class RecursiveHeapPriorityQueue<K,V> extends HeapPriorityQueue<K,V> {
-    public RecursiveHeapPriorityQueue(){
+
+    public RecursiveHeapPriorityQueue() {
         super();
     }
 
@@ -21,14 +24,15 @@ public class RecursiveHeapPriorityQueue<K,V> extends HeapPriorityQueue<K,V> {
     }
 
     @Override
-    protected void unheap(int j){
-        if(j == 0){
+    protected void upheap(int j) {
+        if (j == 0) {
             return;
         }
+
         int p = parent(j);
-        if(compare(heap.get(j),heap.get(p)) < 0){
-            swap(j,p);
-            unheap(p);
+        if (compare(heap.get(j), heap.get(p)) < 0) {
+            swap(j, p);
+            upheap(p);
         }
     }
 }
