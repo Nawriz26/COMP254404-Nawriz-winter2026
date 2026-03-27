@@ -14,8 +14,8 @@ public class Exercise2Test {
         Exercise2BinaryTree<String> tree = new Exercise2BinaryTree<>();
 
         Position<String> a = tree.addRoot("A");
-        Position<String> b = tree.addRoot("B");
-        Position<String> c = tree.addRoot("C");
+        Position<String> b = tree.addLeft("B");
+        Position<String> c = tree.addRight("C");
         tree.addLeft(b, "D");
         tree.addRight(b, "E");
         tree.addLeft(c, "F");
