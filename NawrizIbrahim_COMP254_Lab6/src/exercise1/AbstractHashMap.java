@@ -2,9 +2,10 @@
  ** File:            AbstractHashMap.java
  ** Student:         Nawriz Ibrahim
  ** Student number:  301161181
- ** Assignment:      ab Assignment #6 – XXXXXXXXXXXXX
+ ** Assignment:      Lab Assignment #6 – Using Maps and Hash Tables – Exercise 1
  ** Date:            April 6, 2026
- ** Description:     XXXXXXXXXXXX
+ ** Description:     Abstract hash map implementation with a user-defined maximum load factor,
+ **                  resizing support, and common hash-table operations for concrete subclasses.
  */
 
 package exercise1;
@@ -12,136 +13,166 @@ package exercise1;
 import java.util.ArrayList;
 import java.util.Random;
 
-/**
- * An abstract base class supporting Map implementations that use hash
- * tables with MAD compression.
- *
- * The base class provides the following means of support:
- * 1) Support for calculating hash values with MAD compression
- * 2) Support for resizing table when load factor reaches 1/2
- *
- * Subclass is responsible for providing abstract methods:
- *   createTable(), bucketGet(h,k), bucketPut(h,k,v),
- *   bucketRemove(h,k), and entrySet()
- * and for accurately maintaining the protected member, n,
- * to reflect changes within bucketPut and bucketRemove.
- *
- * @author Michael T. Goodrich
- * @author Roberto Tamassia
- * @author Michael H. Goldwasser
- */
 public abstract class AbstractHashMap<K,V> extends AbstractMap<K,V> {
-    protected int n = 0;                 // number of entries in the dictionary
-    protected int capacity;              // length of the table
-    private int prime;                   // prime factor
-    private long scale, shift;           // the shift and scaling factors
 
-    /** Creates a hash table with the given capacity and prime factor. */
-    public AbstractHashMap(int cap, int p) {
+    // Number of entries currently stored in the hash map.
+    protected int n = 0;
+
+    // Current size of the hash table array.
+    protected int capacity;
+
+    // Prime number used in the MAD compression function.
+    private int prime;
+
+    // Random scale and shift values used by the hash function.
+    private long scale, shift;
+
+    // Maximum allowed load factor before resizing.
+    private double maxLoadFactor;
+
+    public AbstractHashMap(int cap, int p, double maxLoadFactor) {
+        // Capacity must be a positive number.
+        if (cap <= 0)
+            throw new IllegalArgumentException("Capacity must be greater than 0.");
+
+        // Maximum load factor must also be positive.
+        if (maxLoadFactor <= 0)
+            throw new IllegalArgumentException("Maximum load factor must be greater than 0.");
+
+        // Store the prime number used by the hash function.
         prime = p;
+
+        // Set the table capacity.
         capacity = cap;
+
+        // Store the user-defined maximum load factor.
+        this.maxLoadFactor = maxLoadFactor;
+
+        // Generate random values for MAD hashing:
+        // hash = ((hashCode * scale + shift) mod prime) mod capacity
         Random rand = new Random();
-        scale = rand.nextInt(prime-1) + 1;
-        shift = rand.nextInt(prime);
+        scale = rand.nextInt(prime - 1) + 1;   // scale must be between 1 and prime-1
+        shift = rand.nextInt(prime);           // shift must be between 0 and prime-1
+
+        // Let the concrete subclass create its actual table structure.
         createTable();
     }
 
-    /** Creates a hash table with given capacity and prime factor 109345121. */
-    public AbstractHashMap(int cap) { this(cap, 109345121); }  // default prime
+    // Constructor with default load factor 0.5
+    public AbstractHashMap(int cap, int p) { this(cap, p, 0.5); }
 
-    /** Creates a hash table with capacity 17 and prime factor 109345121. */
-    public AbstractHashMap() { this(17); }                     // default capacity
+    // Constructor with default prime value
+    public AbstractHashMap(int cap, double maxLoadFactor) { this(cap, 109345121, maxLoadFactor); }
 
-    // public methods
-    /**
-     * Tests whether the map is empty.
-     * @return true if the map is empty, false otherwise
-     */
+    // Constructor with default prime and default load factor
+    public AbstractHashMap(int cap) { this(cap, 109345121, 0.5); }
+
+    // Constructor with default capacity and prime, but custom load factor
+    public AbstractHashMap(double maxLoadFactor) { this(17, 109345121, maxLoadFactor); }
+
+    // Fully default constructor
+    public AbstractHashMap() { this(17, 109345121, 0.5); }
+
     @Override
-    public int size() { return n; }
+    public int size() {
+        // Return the number of entries stored in the map.
+        return n;
+    }
 
-    /**
-     * Returns the value associated with the specified key, or null if no such entry exists.
-     * @param key  the key whose associated value is to be returned
-     * @return the associated value, or null if no such entry exists
-     */
     @Override
-    public V get(K key) { return bucketGet(hashValue(key), key); }
+    public V get(K key) {
+        // Compute the hash index and let the subclass retrieve the value.
+        return bucketGet(hashValue(key), key);
+    }
 
-    /**
-     * Removes the entry with the specified key, if present, and returns
-     * its associated value. Otherwise does nothing and returns null.
-     * @param key  the key whose entry is to be removed from the map
-     * @return the previous value associated with the removed key, or null if no such entry exists
-     */
     @Override
-    public V remove(K key) { return bucketRemove(hashValue(key), key); }
+    public V remove(K key) {
+        // Compute the hash index and let the subclass remove the entry.
+        return bucketRemove(hashValue(key), key);
+    }
 
-    /**
-     * Associates the given value with the given key. If an entry with
-     * the key was already in the map, this replaced the previous value
-     * with the new one and returns the old value. Otherwise, a new
-     * entry is added and null is returned.
-     * @param key    key with which the specified value is to be associated
-     * @param value  value to be associated with the specified key
-     * @return the previous value associated with the key (or null, if no such entry)
-     */
     @Override
     public V put(K key, V value) {
+        // Insert or replace the key-value pair in the appropriate bucket.
         V answer = bucketPut(hashValue(key), key, value);
-        if (n > capacity / 2)              // keep load factor <= 0.5
-            resize(2 * capacity - 1);        // (or find a nearby prime)
+
+        // Resize the table if the current number of entries exceeds
+        // capacity × maximum load factor.
+        if (n > capacity * maxLoadFactor)
+            resize(2 * capacity - 1);
+
+        // Return the old value if the key already existed, otherwise null.
         return answer;
     }
 
-    // private utilities
-    /** Hash function applying MAD method to default hash code. */
-    private int hashValue(K key) {
-        return (int) ((Math.abs(key.hashCode()*scale + shift) % prime) % capacity);
+    protected int hashValue(K key) {
+        // Compute a compressed hash value using the MAD method:
+        // ((|hashCode * scale + shift| mod prime) mod capacity)
+        return (int) ((Math.abs(key.hashCode() * scale + shift) % prime) % capacity);
     }
 
-    /** Updates the size of the hash table and rehashes all entries. */
+    public double getMaxLoadFactor() {
+        // Return the maximum allowed load factor.
+        return maxLoadFactor;
+    }
+
+    public double getCurrentLoadFactor() {
+        // Current load factor = number of entries / table capacity.
+        // If capacity is somehow 0, return 0.0 to avoid division by zero.
+        return (capacity == 0) ? 0.0 : ((double) n / capacity);
+    }
+
+    public int getCapacity() {
+        // Return the current table capacity.
+        return capacity;
+    }
+
+    public void setMaxLoadFactor(double maxLoadFactor) {
+        // The new maximum load factor must be positive.
+        if (maxLoadFactor <= 0)
+            throw new IllegalArgumentException("Maximum load factor must be greater than 0.");
+
+        // Update the load factor limit.
+        this.maxLoadFactor = maxLoadFactor;
+
+        // If the current number of entries now exceeds the new limit,
+        // resize immediately to maintain the load factor requirement.
+        if (n > capacity * this.maxLoadFactor)
+            resize(2 * capacity - 1);
+    }
+
     private void resize(int newCap) {
+        // Temporary list used to store all existing entries before rebuilding.
         ArrayList<Entry<K,V>> buffer = new ArrayList<>(n);
+
+        // Copy every entry from the current table into the buffer.
         for (Entry<K,V> e : entrySet())
             buffer.add(e);
+
+        // Update the capacity to the new size.
         capacity = newCap;
-        createTable();                     // based on updated capacity
-        n = 0;                             // will be recomputed while reinserting entries
+
+        // Ask the subclass to create a fresh empty table of the new size.
+        createTable();
+
+        // Reset entry count because entries will be reinserted.
+        n = 0;
+
+        // Reinsert all saved entries into the resized table.
+        // Rehashing is necessary because the capacity has changed.
         for (Entry<K,V> e : buffer)
-            put(e.getKey(), e.getValue());
+            bucketPut(hashValue(e.getKey()), e.getKey(), e.getValue());
     }
 
-    // protected abstract methods to be implemented by subclasses
-    /** Creates an empty table having length equal to current capacity. */
+    // Create the concrete table structure (array of buckets, probe table, etc.)
     protected abstract void createTable();
 
-    /**
-     * Returns value associated with key k in bucket with hash value h.
-     * If no such entry exists, returns null.
-     * @param h  the hash value of the relevant bucket
-     * @param k  the key of interest
-     * @return   associate value (or null, if no such entry)
-     */
+    // Retrieve a value from bucket h for key k.
     protected abstract V bucketGet(int h, K k);
 
-    /**
-     * Associates key k with value v in bucket with hash value h, returning
-     * the previously associated value, if any.
-     * @param h  the hash value of the relevant bucket
-     * @param k  the key of interest
-     * @param v  the value to be associated
-     * @return   previous value associated with k (or null, if no such entry)
-     */
+    // Insert a key-value pair into bucket h.
     protected abstract V bucketPut(int h, K k, V v);
 
-    /**
-     * Removes entry having key k from bucket with hash value h, returning
-     * the previously associated value, if found.
-     * @param h  the hash value of the relevant bucket
-     * @param k  the key of interest
-     * @return   previous value associated with k (or null, if no such entry)
-     */
+    // Remove the entry with key k from bucket h.
     protected abstract V bucketRemove(int h, K k);
 }
-
